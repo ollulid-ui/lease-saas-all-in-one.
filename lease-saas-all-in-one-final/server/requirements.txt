@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+python-dotenv
+pydantic
+sqlalchemy
+psycopg[binary]
+python-multipart
+passlib[bcrypt]
+pyjwt
+pypdf
+langextract
+stripe
+redis
+prometheus-client
+prometheus-fastapi-instrumentator

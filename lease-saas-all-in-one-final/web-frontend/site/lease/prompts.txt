@@ -1,0 +1,343 @@
+DeepSite Prompt — Full-Stack Lease Abstraction SaaS (React + FastAPI + Stripe + Postgres + Redis + Traefik + Monitoring)
+
+Goal: Generate a production-ready SaaS called Lease Abstraction that lets users upload CRE leases (PDF/DOC), extracts structured data using LangExtract, bills via Stripe, enforces monthly quotas and per-minute rate limits, and ships as a Docker Compose deployment with Traefik TLS and an optional monitoring stack.
+
+0) Monorepo layout
+
+Create this repo layout:
+
+/app
+  /server                # FastAPI backend
+  /web-dashboard         # React (Vite) frontend served by Nginx
+  /traefik               # Traefik config (ACME store + dynamic redirect)
+  .env.example           # root stack env (domains, ACME email)
+  docker-compose.yml     # core stack (Traefik, API, DB, Redis, Dashboard)
+  docker-compose.monitoring.yml  # optional monitoring stack
+
+1) Frontend (React + Vite + Tailwind, served by Nginx)
+
+Requirements
+
+React 18, Vite, TailwindCSS, React Router v6, Axios.
+
+Dark mode by default, fully responsive.
+
+Pages:
+
+Auth: simple email/password (JWT from backend), token in localStorage.
+
+Dashboard: header “Lease Abstraction SaaS”; sidebar: Upload, History, Billing, Logout; quota banner “X leases left this month”.
+
+Upload: PDF/DOC file upload → POST /api/upload; spinner; render extracted fields in a pretty table; export JSON/CSV.
+
+History: GET /api/history → table of uploads [date, filename, tenant_name, rent_amount, lease_term_years]; view JSON modal.
+
+Billing: GET /api/quota; show plan and remaining; buttons:
+
+POST /billing/create-checkout-session (opens Stripe checkout URL),
+
+POST /billing/portal-session (opens Stripe portal).
+
+.env for VITE_API_BASE (defaults to /api in production).
+
+Build Dockerfile: multi-stage Node build → copy dist/ to Nginx image. Nginx config serves SPA (fallback to index.html).
+
+UI fields for lease JSON
+Render/validate the following:
+
+{
+  "tenant_name": "string",
+  "landlord_name": "string",
+  "property_address": "string",
+  "rent_amount": "number",
+  "lease_term_years": "integer",
+  "renewal_options": "string",
+  "escalation_clauses": "string",
+  "termination_clauses": "string"
+}
+
+2) Backend (FastAPI + SQLAlchemy + Postgres + Redis + Stripe + LangExtract)
+
+Libraries
+
+fastapi, uvicorn, python-dotenv, pydantic
+
+sqlalchemy, psycopg[binary]
+
+redis (optional rate limiter backend)
+
+stripe
+
+langextract (use the function lx.extract(text_or_documents, prompt_description, model_id))
+
+pypdf and python-magic or unstructured for PDF/DOC text extraction
+
+pyjwt for auth
+
+prometheus-client + prometheus-fastapi-instrumentator for /metrics
+
+Environment (.env in /server)
+
+API_KEY=dev-static-key
+JWT_SECRET=change-me
+GEMINI_API_KEY=your-gemini-key             # LangExtract uses Google API key if needed
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+STRIPE_PRICE_ID=
+ADMIN_USER=admin
+ADMIN_PASS=change-me
+DATABASE_URL=postgresql+psycopg://api:api123@db:5432/apidb
+RATE_LIMIT_BACKEND=redis                   # or "db"
+REDIS_URL=redis://redis:6379/0
+
+
+Data models (SQLAlchemy)
+
+users: id, email (unique), password_hash, created_at
+
+api_keys: id, user_id, key (unique), plan ("starter" | "pro" | "enterprise" | "custom"), active, usage_count (monthly), monthly_limit (nullable), last_reset (UTC), created_at
+
+leases: id, user_id, filename, text_excerpt (first 2k chars), json_result (JSON), created_at
+
+rate_limits (if DB backend): id, key, window_start (minute aligned UTC), count (unique on key+window_start)
+
+Indexes on user_id, created_at
+
+Plans & limits
+
+Monthly limits: Starter=10, Pro=30, Enterprise=200 (overridable per key)
+
+Per-minute RPM (by plan): Starter=10 rpm, Pro=60 rpm, Enterprise=180 rpm
+
+Admin can override monthly_limit per key.
+
+Prompt for LangExtract
+Use a strict instruction block; missing fields become null. Do not invent values. Numbers must be numeric.
+
+Auth
+
+Endpoints to POST /auth/signup and POST /auth/login, return JWT (HS256).
+
+All protected endpoints require Authorization: Bearer <token>.
+
+Endpoints
+
+POST /api/upload (auth required):
+
+Accepts multipart file (PDF/DOC).
+
+Extract text (gracefully handle scanned PDFs; if OCR is not included, return “unsupported scanned PDF” message).
+
+Call LangExtract with the schema prompt, model_id="gemini-2.5-pro" by default.
+
+Enforce quota (monthly) and rate limit per user’s API key (see below).
+
+Save leases row with file name, excerpt, JSON result.
+
+Return { result: <json>, id: <lease_id> }.
+
+GET /api/history (auth required):
+
+Return last 50 lease rows for the user (filename, created_at, key fields, and a link to view JSON).
+
+GET /api/lease/{id} (auth required):
+
+Return full JSON result for that lease.
+
+GET /api/quota (auth required):
+
+Return { used, limit, plan } for active key/month.
+
+POST /billing/create-checkout-session (auth required):
+
+Create Stripe Checkout subscription with STRIPE_PRICE_ID and customer_email=user.email.
+
+Return { checkout_url }.
+
+POST /billing/portal-session (auth required):
+
+Create Stripe billing portal session for authenticated user, return { portal_url }.
+
+POST /stripe/webhook:
+
+Verify signature; on checkout.session.completed or invoice.paid: ensure user has an active API key; if none, issue one (plan=starter).
+
+On customer.subscription.deleted: deactivate the user’s API key(s).
+
+API Key issuance & validation
+
+Each authenticated user has exactly one active key by default; admin can issue more.
+
+For requests that use the UI, use the user’s identity + server-side key. For future API access by customers, support x-api-key header that validates and enforces usage + rate limits (same limit logic).
+
+Monthly reset occurs at month boundary (UTC). Track last_reset.
+
+Rate Limiting
+
+Two backends:
+
+Redis (preferred): INCR key rl:{api_key}:{YYYYMMDDHHMM} with TTL 90s; if > rpm, 429.
+
+DB fallback: upsert/select on (key, window_start) row; if count >= rpm, 429.
+
+Apply limiter before LangExtract call and after incrementing monthly usage by 1.
+
+Prometheus Metrics
+
+Use prometheus-fastapi-instrumentator:
+
+Initialize Instrumentator().instrument(app).
+
+Expose on startup at /metrics (not in OpenAPI).
+
+Admin HTML (basic)
+
+HTTP Basic Auth using ADMIN_USER/ADMIN_PASS.
+
+/admin page:
+
+Table of keys with email, plan, monthly limit, usage, rpm (by plan), active toggle, set plan/limit, reset usage.
+
+3) Docker & Traefik (TLS + Routing)
+
+Root .env.example
+
+ACME_EMAIL=you@example.com
+ROOT_DOMAIN=example.com       # dashboard + /api
+API_HOST=api.example.com      # optional: direct API host (can leave blank)
+DASH_HOST=example.com
+POSTGRES_USER=api
+POSTGRES_PASSWORD=api123
+POSTGRES_DB=apidb
+RATE_LIMIT_BACKEND=redis
+
+
+/app/traefik/dynamic.yml
+
+HTTP→HTTPS redirect middleware
+
+/app/traefik/acme.json
+
+Create empty file and set chmod 600 in docs (DeepSite can’t set permissions; add a note).
+
+/app/docker-compose.yml (core stack)
+
+traefik:v3 (80/443), ACME HTTP-01:
+
+--certificatesresolvers.le.acme.email=${ACME_EMAIL}
+
+--certificatesresolvers.le.acme.httpchallenge=true
+
+--certificatesresolvers.le.acme.httpchallenge.entrypoint=web
+
+Mount docker.sock (ro), traefik/dynamic.yml, traefik/acme.json
+
+db: Postgres 16 (env from root), volume pgdata, healthcheck.
+
+redis: Redis 7, healthcheck.
+
+api: build /server; env from /server/.env; override:
+
+DATABASE_URL=postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+
+REDIS_URL=redis://redis:6379/0
+
+labels:
+
+Route 1: Host(${ROOT_DOMAIN}) && PathPrefix(/api) → strip /api → service port 8000
+
+Route 2: optional Host(${API_HOST}) → service root port 8000
+
+depends_on: db(healthy), redis(healthy)
+
+command: python utils/create_tables.py && uvicorn main:app --host 0.0.0.0 --port 8000
+
+dashboard: build /web-dashboard → Nginx; labels:
+
+Host(${DASH_HOST}) → service port 80
+
+env VITE_API_BASE=https://${ROOT_DOMAIN}/api
+
+/app/server/Dockerfile
+
+Python 3.11 slim; install requirements.txt, copy code, run uvicorn.
+
+/app/web-dashboard/Dockerfile
+
+Node 20 slim build → Nginx serve dist/
+
+nginx/default.conf SPA fallback
+
+4) Monitoring (optional — second compose file)
+
+/app/docker-compose.monitoring.yml
+
+prom/prometheus, grafana/grafana, grafana/loki, grafana/promtail, gcr.io/cadvisor/cadvisor, prom/node-exporter
+
+Prometheus config scrapes: prometheus:9090, cadvisor:8080, node-exporter:9100 (host mode), traefik:8080/metrics, api:8000/metrics.
+
+Grafana provisioning: Prometheus + Loki datasources; dashboards:
+
+“FastAPI — Requests & Latency” (req/s, p50/p95/p99 via http_request_duration_seconds_bucket)
+
+“Traefik — Requests & Latency”
+
+“Infra — Node & Containers”
+
+Note in README: add to Traefik command:
+
+--metrics.prometheus=true
+--metrics.prometheus.addEntryPointsLabels=true
+--metrics.prometheus.addServicesLabels=true
+
+5) Security & Policies
+
+HTTPS enforced by Traefik.
+
+Auth required for user endpoints; admin behind Basic Auth.
+
+File size limits on upload (e.g., 20MB) and basic MIME check.
+
+Error handling with explicit messages (429 for rate limit, 402 for quota exceeded).
+
+Data retention job (cron-like) that deletes leases older than 30 days (document in README; optional).
+
+6) Deliverables
+
+All code files for frontend and backend.
+
+All Dockerfiles and both compose files.
+
+README.md at root:
+
+Setup (DNS A records for ${DASH_HOST} and ${API_HOST} if used)
+
+cp .env.example .env, cd server && cp .env.example .env
+
+docker compose up --build -d
+
+Optional monitoring: docker compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
+
+Stripe webhook test command (document):
+
+stripe listen --events checkout.session.completed,customer.subscription.deleted,invoice.paid \
+  --forward-to https://${ROOT_DOMAIN}/api/stripe/webhook
+
+
+Quality bar
+
+Clean, typed Python; small modules (utils/db.py, utils/ratelimit.py, utils/auth.py, utils/pdf.py).
+
+Robust error handling; pydantic models for requests/responses.
+
+Frontend is tasteful (Tailwind), keyboard accessible, with toast errors.
+
+Include a small seed script to create an admin test user.
+
+Include basic e2e test instructions (curl or REST client examples).
+
+Non-goals
+
+OCR for scanned PDFs (out of scope); show helpful error.
+
+Please generate the entire repository with all files, code, configs, and instructions per above. The result should run locally with Docker, and in production with Traefik TLS after DNS is set.

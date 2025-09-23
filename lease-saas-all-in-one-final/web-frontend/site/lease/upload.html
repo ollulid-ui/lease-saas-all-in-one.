@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Lease - Lease Abstraction SaaS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen flex">
+    <!-- Sidebar -->
+    <div class="w-64 bg-gray-800 p-4 flex flex-col">
+        <div class="flex items-center mb-8">
+            <i data-feather="file-text" class="w-6 h-6 mr-2 text-blue-400"></i>
+            <h1 class="text-xl font-bold">Lease Abstraction</h1>
+        </div>
+        
+        <nav class="flex-1 space-y-2">
+            <a href="/dashboard" class="flex items-center px-4 py-2 hover:bg-gray-700 rounded-md">
+                <i data-feather="home" class="w-5 h-5 mr-3"></i>
+                Dashboard
+            </a>
+            <a href="/upload" class="flex items-center px-4 py-2 bg-gray-700 rounded-md text-blue-400">
+                <i data-feather="upload" class="w-5 h-5 mr-3"></i>
+                Upload Lease
+            </a>
+            <a href="/history" class="flex items-center px-4 py-2 hover:bg-gray-700 rounded-md">
+                <i data-feather="database" class="w-5 h-5 mr-3"></i>
+                Lease History
+            </a>
+            <a href="/billing" class="flex items-center px-4 py-2 hover:bg-gray-700 rounded-md">
+                <i data-feather="credit-card" class="w-5 h-5 mr-3"></i>
+                Billing
+            </a>
+        </nav>
+        
+        <div class="mt-auto">
+            <button id="logoutBtn" class="flex items-center w-full px-4 py-2 hover:bg-gray-700 rounded-md">
+                <i data-feather="log-out" class="w-5 h-5 mr-3"></i>
+                Logout
+            </button>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="flex-1 p-8">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-2xl font-bold">Upload Lease Document</h2>
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center">
+                    <i data-feather="user" class="w-5 h-5 mr-2"></i>
+                    <span id="userEmail">user@example.com</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quota Banner -->
+        <div id="quotaBanner" class="bg-blue-900/50 border border-blue-700 rounded-lg p-4 mb-8 flex items-center">
+            <i data-feather="alert-circle" class="w-6 h-6 mr-3 text-blue-300"></i>
+            <div>
+                <p class="font-medium">You have <span id="quotaRemaining">10</span> leases remaining this month</p>
+                <p class="text-sm text-blue-200">Your <span id="quotaPlan">Starter</span> plan resets on <span id="quotaReset">1st of next month</span></p>
+            </div>
+        </div>
+        
+        <!-- Upload Card -->
+        <div class="bg-gray-800 rounded-lg p-6 mb-8">
+            <div class="border-2 border-dashed border-gray-600 rounded-lg p-8 text-center">
+                <div class="flex justify-center mb-4">
+                    <i data-feather="upload-cloud" class="w-12 h-12 text-blue-400"></i>
+                </div>
+                <h3 class="text-lg font-medium mb-2">Drag & drop your lease document here</h3>
+                <p class="text-gray-400 mb-4">Supported formats: PDF, DOC, DOCX</p>
+                <input type="file" id="fileInput" class="hidden" accept=".pdf,.doc,.docx" />
+                <button id="selectFileBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-200">
+                    Select File
+                </button>
+            </div>
+        </div>
+        
+        <!-- Processing Section -->
+        <div id="processingSection" class="hidden bg-gray-800 rounded-lg p-6 mb-8">
+            <div class="flex items-center justify-center py-8">
+                <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mr-4"></div>
+                <div>
+                    <h3 class="text-lg font-medium">Processing your document...</h3>
+                    <p class="text-gray-400">This may take a few moments</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Results Section -->
+        <div id="resultsSection" class="hidden bg-gray-800 rounded-lg p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-semibold">Extracted Lease Data</h3>
+                <div class="flex space-x-2">
+                    <button id="exportJsonBtn" class="bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition duration-200 flex items-center">
+                        <i data-feather="download" class="w-4 h-4 mr-2"></i>
+                        JSON
+                    </button>
+                    <button id="exportCsvBtn" class="bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition duration-200 flex items-center">
+                        <i data-feather="download" class="w-4 h-4 mr-2"></i>
+                        CSV
+                    </button>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-700">
+                    <thead>
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Field</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Value</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsTable" class="divide-y divide-gray-700">
+                        <!-- Will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        feather.replace();
+        
+        // Check authentication
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login';
+        }
+        
+        // Fetch user data
+        async function fetchUserData() {
+            try {
+                const response = await fetch('/api/quota', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('userEmail').textContent = data.email || 'user@example.com';
+                    document.getElementById('quotaRemaining').textContent = data.remaining;
+                    document.getElementById('quotaPlan').textContent = data.plan;
+                    document.getElementById('quotaReset').textContent = data.reset_date || '1st of next month';
+                    
+                    // Update banner color based on remaining quota
+                    const quotaBanner = document.getElementById('quotaBanner');
+                    if (data.remaining <= 3) {
+                        quotaBanner.classList.remove('bg-blue-900/50', 'border-blue-700');
+                        quotaBanner.classList.add('bg-red-900/50', 'border-red-700');
+                    }
+                }
+            } catch (err) {
+                console.error('Error fetching user data:', err);
+            }
+        }
+        
+        // File upload handling
+        document.getElementById('selectFileBtn').addEventListener('click', () => {
+            document.getElementById('fileInput').click();
+        });
+        
+        document.getElementById('fileInput').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            // Check file type
+            const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+            if (!validTypes.includes(file.type)) {
+                alert('Please upload a PDF or Word document');
+                return;
+            }
+            
+            // Check file size (20MB max)
+            if (file.size > 20 * 1024 * 1024) {
+                alert('File size exceeds 20MB limit');
+                return;
+            }
+            
+            // Show processing section
+            document.getElementById('processingSection').classList.remove('hidden');
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    displayResults(data.result);
+                } else {
+                    const error = await response.json();
+                    alert(error.detail || 'Error processing document');
+                }
+            } catch (err) {
+                console.error('Upload error:', err);
+                alert('An error occurred during upload');
+            } finally {
+                document.getElementById('processingSection').classList.add('hidden');
+            }
+        });
+        
+        // Display results
+        function displayResults(data) {
+            const tableBody = document.getElementById('resultsTable');
+            tableBody.innerHTML = '';
+            
+            const fields = [
+                { name: 'Tenant Name', key: 'tenant_name' },
+                { name: 'Landlord Name', key: 'landlord_name' },
+                { name: 'Property Address', key: 'property_address' },
+                { name: 'Rent Amount', key: 'rent_amount', format: val => val ? `$${val.toLocaleString()}` : '-' },
+                { name: 'Lease Term (Years)', key: 'lease_term_years', format: val => val ? `${val} years` : '-' },
+                { name: 'Renewal Options', key: 'renewal_options' },
+                { name: 'Escalation Clauses', key: 'escalation_clauses' },
+                { name: 'Termination Clauses', key: 'termination_clauses' }
+            ];
+            
+            fields.forEach(field => {
+                const value = data[field.key];
+                const formattedValue = field.format ? field.format(value) : (value || '-');
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap font-medium">${field.name}</td>
+                    <td class="px-6 py-4">${formattedValue}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+            
+            document.getElementById('resultsSection').classList.remove('hidden');
+            
+            // Store the data for export
+            document.getElementById('exportJsonBtn').dataset.json = JSON.stringify(data, null, 2);
+            document.getElementById('exportCsvBtn').dataset.json = JSON.stringify(data);
+        }
+        
+        // Export functions
+        document.getElementById('exportJsonBtn').addEventListener('click', () => {
+            const data = document.getElementById('exportJsonBtn').dataset.json;
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'lease_data.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+        
+        document.getElementById('exportCsvBtn').addEventListener('click', () => {
+            const data = JSON.parse(document.getElementById('exportCsvBtn').dataset.json);
+            let csv = 'Field,Value\n';
+            
+            Object.entries(data).forEach(([key, value]) => {
+                if (typeof value === 'object') return;
+                csv += `${key.replace(/_/g, ' ')},${value}\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'lease_data.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+        
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+        });
+        
+        // Initialize
+        fetchUserData();
+        
+        // Drag and drop
+        const dropArea = document.querySelector('.border-dashed');
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight() {
+            dropArea.classList.add('border-blue-400', 'bg-gray-700/50');
+        }
+        
+        function unhighlight() {
+            dropArea.classList.remove('border-blue-400', 'bg-gray-700/50');
+        }
+        
+        dropArea.addEventListener('drop', handleDrop, false);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length) {
+                document.getElementById('fileInput').files = files;
+                const event = new Event('change');
+                document.getElementById('fileInput').dispatchEvent(event);
+            }
+        }
+    </script>
+</body>
+</html>

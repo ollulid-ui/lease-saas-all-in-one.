@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Billing - Lease Abstraction SaaS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen flex">
+    <!-- Sidebar -->
+    <div class="w-64 bg-gray-800 p-4 flex flex-col">
+        <div class="flex items-center mb-8">
+            <i data-feather="file-text" class="w-6 h-6 mr-2 text-blue-400"></i>
+            <h1 class="text-xl font-bold">Lease Abstraction</h1>
+        </div>
+        
+        <nav class="flex-1 space-y-2">
+            <a href="/dashboard" class="flex items-center px-4 py-2 hover:bg-gray-700 rounded-md">
+                <i data-feather="home" class="w-5 h-5 mr-3"></i>
+                Dashboard
+            </a>
+            <a href="/upload" class="flex items-center px-4 py-2 hover:bg-gray-700 rounded-md">
+                <i data-feather="upload" class="w-5 h-5 mr-3"></i>
+                Upload Lease
+            </a>
+            <a href="/history" class="flex items-center px-4 py-2 hover:bg-gray-700 rounded-md">
+                <i data-feather="database" class="w-5 h-5 mr-3"></i>
+                Lease History
+            </a>
+            <a href="/billing" class="flex items-center px-4 py-2 bg-gray-700 rounded-md text-blue-400">
+                <i data-feather="credit-card" class="w-5 h-5 mr-3"></i>
+                Billing
+            </a>
+        </nav>
+        
+        <div class="mt-auto">
+            <button id="logoutBtn" class="flex items-center w-full px-4 py-2 hover:bg-gray-700 rounded-md">
+                <i data-feather="log-out" class="w-5 h-5 mr-3"></i>
+                Logout
+            </button>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="flex-1 p-8">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-2xl font-bold">Billing & Subscription</h2>
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center">
+                    <i data-feather="user" class="w-5 h-5 mr-2"></i>
+                    <span id="userEmail">user@example.com</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quota Banner -->
+        <div id="quotaBanner" class="bg-blue-900/50 border border-blue-700 rounded-lg p-4 mb-8 flex items-center">
+            <i data-feather="alert-circle" class="w-6 h-6 mr-3 text-blue-300"></i>
+            <div>
+                <p class="font-medium">You have <span id="quotaRemaining">10</span> leases remaining this month</p>
+                <p class="text-sm text-blue-200">Your <span id="quotaPlan">Starter</span> plan resets on <span id="quotaReset">1st of next month</span></p>
+            </div>
+        </div>
+        
+        <!-- Current Plan -->
+        <div class="bg-gray-800 rounded-lg p-6 mb-8">
+            <h3 class="text-xl font-semibold mb-4">Your Current Plan</h3>
+            
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="bg-gray-700 p-6 rounded-lg border border-gray-600">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h4 class="text-lg font-medium">Starter</h4>
+                            <p class="text-gray-400">For small teams</p>
+                        </div>
+                        <div class="bg-blue-600 text-white text-sm px-3 py-1 rounded-full">
+                            Current Plan
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <span class="text-3xl font-bold">$29</span>
+                        <span class="text-gray-400">/month</span>
+                    </div>
+                    
+                    <ul class="space-y-2 mb-6">
+                        <li class="flex items-center">
+                            <i data-feather="check" class="w-4 h-4 mr-2 text-green-400"></i>
+                            <span>10 leases per month</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i data-feather="check" class="w-4 h-4 mr-2 text-green-400"></i>
+                            <span>10 requests per minute</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i data-feather="x" class="w-4 h-4 mr-2 text-gray-500"></i>
+                            <span class="text-gray-400">Priority support</span>
+                        </li>
+                    </ul>
+                    
+                    <button class="w-full bg-gray-600 text-white font-medium py-2 px-4 rounded-md cursor-not-allowed" disabled>
+                        Current Plan
+                    </button>
+                </div>
+                
+                <div class="bg-gray-700 p-6 rounded-lg border border-gray-600 hover:border-blue-500 transition duration-200">
+                    <div class="mb-4">
+                        <h4 class="text-lg font-medium">Professional</h4>
+                        <p class="text-gray-400">For growing businesses</p>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <span class="text-3xl font-bold">$99</span>
+                        <span class="text-gray-400">/month</span>
+                    </div>
+                    
+                    <ul class="space-y-2 mb-6">
+                        <li class="flex items-center">
+                            <i data-feather="check" class="w-4 h-4 mr-2 text-green-400"></i>
+                            <span>30 leases per month</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i data-feather="check" class="w-4 h-4 mr-2 text-green-400"></i>
+                            <span>60 requests per minute</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i data-feather="check" class="w-4 h-4 mr-2 text-green-400"></i>
+                            <span>Email support</span>
+                        </li>
+                    </ul>
+                    
+                    <button id="upgradeToPro" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-200">
+                        Upgrade
+                    </button>
+                </div>
+                
+                <div class="bg-gray-700 p-6 rounded-lg border border-gray-600 hover:border-blue-500 transition duration-200">
+                    <div class="mb-4">
+                        <h4 class="text-lg font-medium">Enterprise</h4>
+                        <p class="text-gray-400">For large organizations</p>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <span class="text-3xl font-bold">$299</span>
+                        <span class="text-gray-400">/month</span>
+                    </div>
+                    
+                    <ul class="space-y-2 mb-6">
+                        <li class="flex items-center">
+                            <i data-feather="check" class="w-4 h-4 mr-2 text-green-400"></i>
+                            <span>200 leases per month</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i data-feather="check" class="w-4 h-4 mr-2 text-green-400"></i>
+                            <span>180 requests per minute</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i data-feather="check" class="w-4 h-4 mr-2 text-green-400"></i>
+                            <span>Priority support</span>
+                        </li>
+                    </ul>
+                    
+                    <button id="upgradeToEnterprise" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-200">
+                        Upgrade
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Billing Portal -->
+        <div class="bg-gray-800 rounded-lg p-6">
+            <h3 class="text-xl font-semibold mb-4">Billing Management</h3>
+            
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="bg-gray-700 p-6 rounded-lg">
+                    <div class="flex items-center mb-4">
+                        <div class="p-3 bg-blue-900/30 rounded-full mr-4">
+                            <i data-feather="credit-card" class="w-6 h-6 text-blue-400"></i>
+                        </div>
+                        <h4 class="text-lg font-medium">Payment Methods</h4>
+                    </div>
+                    <p class="text-gray-400 mb-6">Update your payment methods or view billing history</p>
+                    <button id="manageBilling" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-200">
+                        Manage Billing
+                    </button>
+                </div>
+                
+                <div class="bg-gray-700 p-6 rounded-lg">
+                    <div class="flex items-center mb-4">
+                        <div class="p-3 bg-purple-900/30 rounded-full mr-4">
+                            <i data-feather="file-text" class="w-6 h-6 text-purple-400"></i>
+                        </div>
+                        <h4 class="text-lg font-medium">Invoices</h4>
+                    </div>
+                    <p class="text-gray-400 mb-6">View and download your past invoices</p>
+                    <button id="viewInvoices" class="bg-gray-600 hover:bg-gray-500 text-white font-medium py-2 px-4 rounded-md transition duration-200">
+                        View Invoices
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        feather.replace();
+        
+        // Check authentication
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login';
+        }
+        
+        // Fetch user data
+        async function fetchUserData() {
+            try {
+                const response = await fetch('/api/quota', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('userEmail').textContent = data.email || 'user@example.com';
+                    document.getElementById('quotaRemaining').textContent = data.remaining;
+                    document.getElementById('quotaPlan').textContent = data.plan;
+                    document.getElementById('quotaReset').textContent = data.reset_date || '1st of next month';
+                    
+                    // Update banner color based on remaining quota
+                    const quotaBanner = document.getElementById('quotaBanner');
+                    if (data.remaining <= 3) {
+                        quotaBanner.classList.remove('bg-blue-900/50', 'border-blue-700');
+                        quotaBanner.classList.add('bg-red-900/50', 'border-red-700');
+                    }
+                }
+            } catch (err) {
+                console.error('Error fetching user data:', err);
+            }
+        }
+        
+        // Upgrade to Pro
+        document.getElementById('upgradeToPro').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/billing/create-checkout-session', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ plan: 'pro' })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    window.location.href = data.checkout_url;
+                } else {
+                    const error = await response.json();
+                    alert(error.detail || 'Failed to initiate upgrade');
+                }
+            } catch (err) {
+                console.error('Upgrade error:', err);
+                alert('An error occurred during upgrade');
+            }
+        });
+        
+        // Upgrade to Enterprise
+        document.getElementById('upgradeToEnterprise').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/billing/create-checkout-session', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ plan: 'enterprise' })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    window.location.href = data.checkout_url;
+                } else {
+                    const error = await response.json();
+                    alert(error.detail || 'Failed to initiate upgrade');
+                }
+            } catch (err) {
+                console.error('Upgrade error:', err);
+                alert('An error occurred during upgrade');
+            }
+        });
+        
+        // Manage billing
+        document.getElementById('manageBilling').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/billing/portal-session', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    window.location.href = data.portal_url;
+                } else {
+                    const error = await response.json();
+                    alert(error.detail || 'Failed to access billing portal');
+                }
+            } catch (err) {
+                console.error('Billing portal error:', err);
+                alert('An error occurred accessing billing portal');
+            }
+        });
+        
+        // View invoices
+        document.getElementById('viewInvoices').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/billing/portal-session', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    window.location.href = data.portal_url;
+                } else {
+                    const error = await response.json();
+                    alert(error.detail || 'Failed to access billing portal');
+                }
+            } catch (err) {
+                console.error('Billing portal error:', err);
+                alert('An error occurred accessing billing portal');
+            }
+        });
+        
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+        });
+        
+        // Initialize
+        fetchUserData();
+    </script>
+</body>
+</html>

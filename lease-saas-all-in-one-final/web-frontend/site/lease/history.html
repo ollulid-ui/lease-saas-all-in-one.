@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lease History - Lease Abstraction SaaS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen flex">
+    <!-- Sidebar -->
+    <div class="w-64 bg-gray-800 p-4 flex flex-col">
+        <div class="flex items-center mb-8">
+            <i data-feather="file-text" class="w-6 h-6 mr-2 text-blue-400"></i>
+            <h1 class="text-xl font-bold">Lease Abstraction</h1>
+        </div>
+        
+        <nav class="flex-1 space-y-2">
+            <a href="/dashboard" class="flex items-center px-4 py-2 hover:bg-gray-700 rounded-md">
+                <i data-feather="home" class="w-5 h-5 mr-3"></i>
+                Dashboard
+            </a>
+            <a href="/upload" class="flex items-center px-4 py-2 hover:bg-gray-700 rounded-md">
+                <i data-feather="upload" class="w-5 h-5 mr-3"></i>
+                Upload Lease
+            </a>
+            <a href="/history" class="flex items-center px-4 py-2 bg-gray-700 rounded-md text-blue-400">
+                <i data-feather="database" class="w-5 h-5 mr-3"></i>
+                Lease History
+            </a>
+            <a href="/billing" class="flex items-center px-4 py-2 hover:bg-gray-700 rounded-md">
+                <i data-feather="credit-card" class="w-5 h-5 mr-3"></i>
+                Billing
+            </a>
+        </nav>
+        
+        <div class="mt-auto">
+            <button id="logoutBtn" class="flex items-center w-full px-4 py-2 hover:bg-gray-700 rounded-md">
+                <i data-feather="log-out" class="w-5 h-5 mr-3"></i>
+                Logout
+            </button>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="flex-1 p-8">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-2xl font-bold">Lease History</h2>
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center">
+                    <i data-feather="user" class="w-5 h-5 mr-2"></i>
+                    <span id="userEmail">user@example.com</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quota Banner -->
+        <div id="quotaBanner" class="bg-blue-900/50 border border-blue-700 rounded-lg p-4 mb-8 flex items-center">
+            <i data-feather="alert-circle" class="w-6 h-6 mr-3 text-blue-300"></i>
+            <div>
+                <p class="font-medium">You have <span id="quotaRemaining">10</span> leases remaining this month</p>
+                <p class="text-sm text-blue-200">Your <span id="quotaPlan">Starter</span> plan resets on <span id="quotaReset">1st of next month</span></p>
+            </div>
+        </div>
+        
+        <!-- Filters -->
+        <div class="bg-gray-800 rounded-lg p-4 mb-6">
+            <div class="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-4 md:space-y-0">
+                <div class="flex-1">
+                    <label for="search" class="block text-sm font-medium mb-1">Search</label>
+                    <input type="text" id="search" placeholder="Search by tenant or filename" 
+                        class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="dateFrom" class="block text-sm font-medium mb-1">From</label>
+                    <input type="date" id="dateFrom" 
+                        class="px-4 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="dateTo" class="block text-sm font-medium mb-1">To</label>
+                    <input type="date" id="dateTo" 
+                        class="px-4 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="self-end">
+                    <button id="applyFilters" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-200">
+                        Apply
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- History Table -->
+        <div class="bg-gray-800 rounded-lg p-6">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-700">
+                    <thead>
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Filename</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Tenant</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Rent Amount</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Lease Term</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTable" class="divide-y divide-gray-700">
+                        <!-- Will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            <div class="flex items-center justify-between mt-6">
+                <div>
+                    <p class="text-sm text-gray-400">
+                        Showing <span id="startItem">1</span> to <span id="endItem">10</span> of <span id="totalItems">50</span> results
+                    </p>
+                </div>
+                <div class="flex space-x-2">
+                    <button id="prevPage" class="bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition duration-200 disabled:opacity-50" disabled>
+                        Previous
+                    </button>
+                    <button id="nextPage" class="bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition duration-200">
+                        Next
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- View JSON Modal -->
+    <div id="jsonModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-gray-800 rounded-lg p-6 w-full max-w-3xl max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-semibold">Lease Data</h3>
+                <button id="closeModal" class="text-gray-400 hover:text-gray-200">
+                    <i data-feather="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div class="flex-1 overflow-auto bg-gray-900 p-4 rounded">
+                <pre id="jsonContent" class="text-sm text-gray-300"></pre>
+            </div>
+            <div class="mt-4 flex justify-end">
+                <button id="copyJson" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-200">
+                    Copy to Clipboard
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        feather.replace();
+        
+        // Check authentication
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login';
+        }
+        
+        // State
+        let currentPage = 1;
+        const itemsPerPage = 10;
+        let totalItems = 0;
+        
+        // Fetch user data
+        async function fetchUserData() {
+            try {
+                const response = await fetch('/api/quota', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('userEmail').textContent = data.email || 'user@example.com';
+                    document.getElementById('quotaRemaining').textContent = data.remaining;
+                    document.getElementById('quotaPlan').textContent = data.plan;
+                    document.getElementById('quotaReset').textContent = data.reset_date || '1st of next month';
+                    
+                    // Update banner color based on remaining quota
+                    const quotaBanner = document.getElementById('quotaBanner');
+                    if (data.remaining <= 3) {
+                        quotaBanner.classList.remove('bg-blue-900/50', 'border-blue-700');
+                        quotaBanner.classList.add('bg-red-900/50', 'border-red-700');
+                    }
+                }
+            } catch (err) {
+                console.error('Error fetching user data:', err);
+            }
+        }
+        
+        // Fetch lease history
+        async function fetchLeaseHistory(page = 1, search = '', dateFrom = '', dateTo = '') {
+            try {
+                let url = `/api/history?limit=${itemsPerPage}&offset=${(page - 1) * itemsPerPage}`;
+                
+                if (search) {
+                    url += `&search=${encodeURIComponent(search)}`;
+                }
+                
+                if (dateFrom) {
+                    url += `&date_from=${encodeURIComponent(dateFrom)}`;
+                }
+                
+                if (dateTo) {
+                    url += `&date_to=${encodeURIComponent(dateTo)}`;
+                }
+                
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    totalItems = data.total;
+                    renderHistoryTable(data.items);
+                    updatePagination();
+                }
+            } catch (err) {
+                console.error('Error fetching lease history:', err);
+            }
+        }
+        
+        // Render history table
+        function renderHistoryTable(items) {
+            const tableBody = document.getElementById('historyTable');
+            tableBody.innerHTML = '';
+            
+            if (items.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td colspan="6" class="px-6 py-4 text-center text-gray-400">No leases found</td>
+                `;
+                tableBody.appendChild(row);
+                return;
+            }
+            
+            items.forEach(lease => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">${new Date(lease.created_at).toLocaleDateString()}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">${lease.filename}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">${lease.tenant_name || '-'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">${lease.rent_amount ? '$' + lease.rent_amount.toLocaleString() : '-'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">${lease.lease_term_years || '-'} yrs</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <button class="text-blue-400 hover:text-blue-300 view-json" data-id="${lease.id}">
+                            View JSON
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+            
+            // Add event listeners to view JSON buttons
+            document.querySelectorAll('.view-json').forEach(button => {
+                button.addEventListener('click', () => {
+                    viewLeaseJson(button.dataset.id);
+                });
+            });
+        }
+        
+        // Update pagination
+        function updatePagination() {
+            const startItem = (currentPage - 1) * itemsPerPage + 1;
+            const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+            
+            document.getElementById('startItem').textContent = startItem;
+            document.getElementById('endItem').textContent = endItem;
+            document.getElementById('totalItems').textContent = totalItems;
+            
+            document.getElementById('prevPage').disabled = currentPage === 1;
+            document.getElementById('nextPage').disabled = currentPage * itemsPerPage >= totalItems;
+        }
+        
+        // View lease JSON
+        async function viewLeaseJson(leaseId) {
+            try {
+                const response = await fetch(`/api/lease/${leaseId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('jsonContent').textContent = JSON.stringify(data, null, 2);
+                    document.getElementById('jsonModal').classList.remove('hidden');
+                }
+            } catch (err) {
+                console.error('Error fetching lease JSON:', err);
+                alert('Failed to load lease data');
+            }
+        }
+        
+        // Copy JSON to clipboard
+        document.getElementById('copyJson').addEventListener('click', () => {
+            const jsonContent = document.getElementById('jsonContent').textContent;
+            navigator.clipboard.writeText(jsonContent).then(() => {
+                alert('Copied to clipboard');
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('Failed to copy to clipboard');
+            });
+        });
+        
+        // Close modal
+        document.getElementById('closeModal').addEventListener('click', () => {
+            document.getElementById('jsonModal').classList.add('hidden');
+        });
+        
+        // Pagination
+        document.getElementById('prevPage').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                const search = document.getElementById('search').value;
+                const dateFrom = document.getElementById('dateFrom').value;
+                const dateTo = document.getElementById('dateTo').value;
+                fetchLeaseHistory(currentPage, search, dateFrom, dateTo);
+            }
+        });
+        
+        document.getElementById('nextPage').addEventListener('click', () => {
+            if (currentPage * itemsPerPage < totalItems) {
+                currentPage++;
+                const search = document.getElementById('search').value;
+                const dateFrom = document.getElementById('dateFrom').value;
+                const dateTo = document.getElementById('dateTo').value;
+                fetchLeaseHistory(currentPage, search, dateFrom, dateTo);
+            }
+        });
+        
+        // Apply filters
+        document.getElementById('applyFilters').addEventListener('click', () => {
+            currentPage = 1;
+            const search = document.getElementById('search').value;
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+            fetchLeaseHistory(currentPage, search, dateFrom, dateTo);
+        });
+        
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+        });
+        
+        // Initialize
+        fetchUserData();
+        fetchLeaseHistory();
+    </script>
+</body>
+</html>

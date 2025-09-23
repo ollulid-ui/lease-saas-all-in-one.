@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Lease Abstraction SaaS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen flex">
+    <!-- Sidebar -->
+    <div class="w-64 bg-gray-800 p-4 flex flex-col">
+        <div class="flex items-center mb-8">
+            <i data-feather="file-text" class="w-6 h-6 mr-2 text-blue-400"></i>
+            <h1 class="text-xl font-bold">Lease Abstraction</h1>
+        </div>
+        
+        <nav class="flex-1 space-y-2">
+            <a href="/dashboard" class="flex items-center px-4 py-2 bg-gray-700 rounded-md text-blue-400">
+                <i data-feather="home" class="w-5 h-5 mr-3"></i>
+                Dashboard
+            </a>
+            <a href="/upload" class="flex items-center px-4 py-2 hover:bg-gray-700 rounded-md">
+                <i data-feather="upload" class="w-5 h-5 mr-3"></i>
+                Upload Lease
+            </a>
+            <a href="/history" class="flex items-center px-4 py-2 hover:bg-gray-700 rounded-md">
+                <i data-feather="database" class="w-5 h-5 mr-3"></i>
+                Lease History
+            </a>
+            <a href="/billing" class="flex items-center px-4 py-2 hover:bg-gray-700 rounded-md">
+                <i data-feather="credit-card" class="w-5 h-5 mr-3"></i>
+                Billing
+            </a>
+        </nav>
+        
+        <div class="mt-auto">
+            <button id="logoutBtn" class="flex items-center w-full px-4 py-2 hover:bg-gray-700 rounded-md">
+                <i data-feather="log-out" class="w-5 h-5 mr-3"></i>
+                Logout
+            </button>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="flex-1 p-8">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-2xl font-bold">Dashboard</h2>
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center">
+                    <i data-feather="user" class="w-5 h-5 mr-2"></i>
+                    <span id="userEmail">user@example.com</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quota Banner -->
+        <div id="quotaBanner" class="bg-blue-900/50 border border-blue-700 rounded-lg p-4 mb-8 flex items-center">
+            <i data-feather="alert-circle" class="w-6 h-6 mr-3 text-blue-300"></i>
+            <div>
+                <p class="font-medium">You have <span id="quotaRemaining">10</span> leases remaining this month</p>
+                <p class="text-sm text-blue-200">Your <span id="quotaPlan">Starter</span> plan resets on <span id="quotaReset">1st of next month</span></p>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="grid md:grid-cols-3 gap-6 mb-8">
+            <a href="/upload" class="bg-gray-800 hover:bg-gray-700 p-6 rounded-lg transition duration-200">
+                <div class="flex items-center mb-4">
+                    <div class="p-3 bg-blue-900/30 rounded-full mr-4">
+                        <i data-feather="upload" class="w-6 h-6 text-blue-400"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold">Upload New Lease</h3>
+                </div>
+                <p class="text-gray-400">Upload PDF or DOC lease documents to extract structured data</p>
+            </a>
+            
+            <a href="/history" class="bg-gray-800 hover:bg-gray-700 p-6 rounded-lg transition duration-200">
+                <div class="flex items-center mb-4">
+                    <div class="p-3 bg-purple-900/30 rounded-full mr-4">
+                        <i data-feather="database" class="w-6 h-6 text-purple-400"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold">View History</h3>
+                </div>
+                <p class="text-gray-400">Browse your previously processed leases and export data</p>
+            </a>
+            
+            <a href="/billing" class="bg-gray-800 hover:bg-gray-700 p-6 rounded-lg transition duration-200">
+                <div class="flex items-center mb-4">
+                    <div class="p-3 bg-green-900/30 rounded-full mr-4">
+                        <i data-feather="credit-card" class="w-6 h-6 text-green-400"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold">Manage Billing</h3>
+                </div>
+                <p class="text-gray-400">Upgrade your plan or manage payment methods</p>
+            </a>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="bg-gray-800 rounded-lg p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-semibold">Recent Activity</h3>
+                <a href="/history" class="text-sm text-blue-400 hover:text-blue-300">View All</a>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-700">
+                    <thead>
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Filename</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Tenant</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Rent Amount</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Lease Term</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentActivity" class="divide-y divide-gray-700">
+                        <!-- Will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        feather.replace();
+        
+        // Check authentication
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login';
+        }
+        
+        // Fetch user data
+        async function fetchUserData() {
+            try {
+                const response = await fetch('/api/quota', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('userEmail').textContent = data.email || 'user@example.com';
+                    document.getElementById('quotaRemaining').textContent = data.remaining;
+                    document.getElementById('quotaPlan').textContent = data.plan;
+                    document.getElementById('quotaReset').textContent = data.reset_date || '1st of next month';
+                    
+                    // Update banner color based on remaining quota
+                    const quotaBanner = document.getElementById('quotaBanner');
+                    if (data.remaining <= 3) {
+                        quotaBanner.classList.remove('bg-blue-900/50', 'border-blue-700');
+                        quotaBanner.classList.add('bg-red-900/50', 'border-red-700');
+                    }
+                }
+            } catch (err) {
+                console.error('Error fetching user data:', err);
+            }
+        }
+        
+        // Fetch recent activity
+        async function fetchRecentActivity() {
+            try {
+                const response = await fetch('/api/history?limit=5', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const tableBody = document.getElementById('recentActivity');
+                    tableBody.innerHTML = '';
+                    
+                    data.forEach(lease => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td class="px-6 py-4 whitespace-nowrap">${new Date(lease.created_at).toLocaleDateString()}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">${lease.filename}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">${lease.tenant_name || '-'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">${lease.rent_amount ? '$' + lease.rent_amount.toLocaleString() : '-'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">${lease.lease_term_years || '-'} yrs</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                }
+            } catch (err) {
+                console.error('Error fetching recent activity:', err);
+            }
+        }
+        
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+        });
+        
+        // Initialize
+        fetchUserData();
+        fetchRecentActivity();
+    </script>
+</body>
+</html>

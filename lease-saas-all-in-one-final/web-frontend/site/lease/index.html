@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lease Abstraction SaaS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+<!-- Lease SaaS top-right strip (fallback if no <nav>) -->
+<div style="position:fixed; right:16px; top:12px; z-index:99990; display:flex; gap:10px; backdrop-filter:saturate(180%) blur(8px); background:rgba(255,255,255,.6); padding:6px 8px; border-radius:12px; border:1px solid rgba(0,0,0,.08)">
+  <a href="#" data-ls-open data-ls-tab="login" class="nav-cta">Sign&nbsp;In</a>
+  <a href="#" data-ls-open data-ls-tab="upload" class="nav-cta">Upload</a>
+  <a href="#" data-ls-open data-ls-tab="upgrade" class="nav-cta">Upgrade</a>
+</div>
+<style>
+  .nav-cta { padding:6px 10px; border-radius:10px; text-decoration:none; font-weight:600;
+             border:1px solid rgba(0,0,0,.12); background:rgba(255,255,255,.85); color:#111; }
+  .nav-cta:hover { background: rgba(0,0,0,.06); }
+</style>
+
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center mb-8">Lease Abstraction SaaS</h1>
+        <div class="max-w-4xl mx-auto bg-gray-800 rounded-lg shadow-lg p-6">
+            <p class="mb-6">This is the landing page for the Lease Abstraction SaaS. Please visit the <a href="/login" class="text-blue-400 hover:text-blue-300">login page</a> to access the dashboard.</p>
+            
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="bg-gray-700 p-4 rounded-lg">
+                    <div class="flex items-center mb-2">
+                        <i data-feather="upload" class="mr-2"></i>
+                        <h3 class="text-lg font-semibold">Upload Leases</h3>
+                    </div>
+                    <p>Upload PDF or DOC lease documents and extract structured data automatically.</p>
+                </div>
+                
+                <div class="bg-gray-700 p-4 rounded-lg">
+                    <div class="flex items-center mb-2">
+                        <i data-feather="database" class="mr-2"></i>
+                        <h3 class="text-lg font-semibold">Lease History</h3>
+                    </div>
+                    <p>View all your processed leases in one place with search and filtering.</p>
+                </div>
+                
+                <div class="bg-gray-700 p-4 rounded-lg">
+                    <div class="flex items-center mb-2">
+                        <i data-feather="credit-card" class="mr-2"></i>
+                        <h3 class="text-lg font-semibold">Billing</h3>
+                    </div>
+                    <p>Manage your subscription and view usage metrics.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        feather.replace();
+    </script>
+  <script src="/frontend-integration.js"></script>
+</body>
+</html>
