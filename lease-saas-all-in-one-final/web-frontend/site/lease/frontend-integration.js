@@ -1,6 +1,9 @@
 
 (function(){
-  const API_BASE = '/api';
+  // Allow overriding the API base from the page:
+  //   <script>window.API_BASE='https://YOUR-BACKEND.onrender.com';</script>
+  // before including this file.
+  const API_BASE = (typeof window !== 'undefined' && window.API_BASE) ? window.API_BASE : '/api';
   const LS_KEY = 'lease_saas_token';
 
   function h(tag, attrs={}, children=[]) {
@@ -52,7 +55,8 @@
   function authHeader(){ const t=getToken(); return t? { 'Authorization': 'Bearer ' + t } : {}; }
 
   async function api(path, opt={}){
-    const res = await fetch(API_BASE + path, {
+    const url = API_BASE.replace(/\/$/, '') + path; // ensure no trailing slash
+    const res = await fetch(url, {
       method: opt.method || 'GET',
       headers: { 'Content-Type':'application/json', ...(opt.headers||{}), ...authHeader() },
       body: opt.body ? JSON.stringify(opt.body) : undefined
@@ -69,7 +73,8 @@
   async function apiUpload(file){
     const fd = new FormData();
     fd.append('f', file);
-    const res = await fetch(API_BASE + '/upload', {
+    const url = API_BASE.replace(/\/$/, '') + '/upload';
+    const res = await fetch(url, {
       method:'POST',
       headers: { ...authHeader() },
       body: fd
@@ -133,7 +138,6 @@
   }
 
   function renderActive(){
-    // highlight tabs
     Array.from(tabsBar.children).forEach(ch => {
       ch.classList.toggle('active', ch.getAttribute('data-id')===active);
     });
@@ -147,7 +151,7 @@
 
   function renderLogin(){
     const email = h('input', {class:'ls-input', type:'email', placeholder:'Email'});
-    const pass = h('input', {class:'ls-input', type:'password', placeholder:'Password'});
+    const pass = h('input', {class:'ls-input', type:'password', placeholder:'Password (min 8 chars)'});
     const out = h('div', {class:'ls-muted'});
     const row = h('div', {class:'ls-row'}, [
       h('button', {class:'ls-btn', onclick: async ()=>{
@@ -231,10 +235,6 @@
     body.appendChild(out);
   }
 
-  // Auto-open quota if already signed in
-  if (getToken()) active = 'quota';
-})();
-
   // Expose a tiny global API so nav buttons can open the modal
   window.LeaseSaaS = {
     open: function(tab){
@@ -254,4 +254,7 @@
     const tab = a.getAttribute('data-ls-tab') || '';
     window.LeaseSaaS.open(tab || null);
   }, {capture:true});
+
+  // Auto-open quota if already signed in
+  if (getToken()) active = 'quota';
 })();
